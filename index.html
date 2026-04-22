@@ -1,4 +1,38 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DLS James Automation</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- React -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- Babel (so JSX works) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      margin:0;
+      font-family:'DM Sans', sans-serif;
+      background:#fdf8f3;
+    }
+  </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+
+// ❗️ REMOVE imports (browser doesn't support them)
+const { useState, useRef, useCallback, useEffect } = React;
+
+const { useState, useRef, useCallback, useEffect } = React;
 
 const BROWN = {
   50: "#fdf8f3",
@@ -1179,64 +1213,21 @@ function SettingsPage() {
   );
 }
 
-// ---- MAIN APP ----
-export default function App() {
-  const [page, setPage] = useState("creator");
 
-  const navItems = [
-    { id: "dashboard", icon: "📊", label: "Dashboard" },
-    { id: "creator", icon: "🎬", label: "Video Creator" },
-    { id: "captions", icon: "✍️", label: "Caption Library" },
-    { id: "settings", icon: "⚙️", label: "Settings" },
-  ];
-
-  const pageTitles = {
-    dashboard: "Income Dashboard",
-    creator: "Video Creator",
-    captions: "Caption Library",
-    settings: "Settings",
-  };
-
+function App() {
   return (
-    <>
-      <style>{styles}</style>
-      <div className="app-shell">
-        <div className="sidebar">
-          <div className="sidebar-logo">
-            <div className="logo-badge">DLS</div>
-            <div className="logo-title">James<br />Automation</div>
-            <div className="logo-sub">TikTok Shop Suite</div>
-          </div>
-          <nav className="sidebar-nav">
-            <div className="nav-label">Navigation</div>
-            {navItems.map(n => (
-              <button key={n.id} className={`nav-item${page === n.id ? " active" : ""}`}
-                onClick={() => setPage(n.id)}>
-                <span className="nav-icon">{n.icon}</span>
-                {n.label}
-              </button>
-            ))}
-          </nav>
-          <div className="sidebar-footer">
-            v1.0 · DLS James © 2025
-          </div>
-        </div>
-
-        <div className="main">
-          <div className="topbar">
-            <div className="topbar-title">{pageTitles[page]}</div>
-            <div className="topbar-right">
-              <span className="status-pill status-live">● Live</span>
-              <div className="avatar">J</div>
-            </div>
-          </div>
-
-          {page === "dashboard" && <DashboardPage />}
-          {page === "creator" && <VideoCreatorPage />}
-          {page === "captions" && <CaptionLibraryPage />}
-          {page === "settings" && <SettingsPage />}
-        </div>
-      </div>
-    </>
+    <div style={{padding:40}}>
+      <h1>DLS James Automation</h1>
+      <p>Your UI is now running on GitHub Pages 🎉</p>
+    </div>
   );
 }
+
+/* ===== RENDER ===== */
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+
+</script>
+
+</body>
+</html>
