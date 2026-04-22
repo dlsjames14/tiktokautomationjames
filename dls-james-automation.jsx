@@ -1,0 +1,1242 @@
+import { useState, useRef, useCallback, useEffect } from "react";
+
+const BROWN = {
+  50: "#fdf8f3",
+  100: "#f5e9d8",
+  200: "#e8ceab",
+  300: "#d4a873",
+  400: "#c08040",
+  500: "#9a5f28",
+  600: "#7a4820",
+  700: "#5c3318",
+  800: "#3d2010",
+  900: "#1f0f06",
+};
+
+const styles = `
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #fdf8f3;
+    font-family: 'DM Sans', sans-serif;
+    color: #1f0f06;
+  }
+
+  :root {
+    --brown-50: #fdf8f3;
+    --brown-100: #f5e9d8;
+    --brown-200: #e8ceab;
+    --brown-300: #d4a873;
+    --brown-400: #c08040;
+    --brown-500: #9a5f28;
+    --brown-600: #7a4820;
+    --brown-700: #5c3318;
+    --white: #ffffff;
+    --shadow: 0 2px 20px rgba(90,40,10,0.10);
+    --shadow-lg: 0 8px 40px rgba(90,40,10,0.18);
+  }
+
+  .app-shell {
+    display: flex;
+    min-height: 100vh;
+    background: var(--brown-50);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 240px;
+    background: linear-gradient(180deg, #3d2010 0%, #5c3318 100%);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    z-index: 100;
+    box-shadow: 4px 0 24px rgba(30,10,0,0.18);
+  }
+
+  .sidebar-logo {
+    padding: 28px 20px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.10);
+  }
+  .logo-badge {
+    display: inline-block;
+    background: var(--brown-300);
+    color: #fff;
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    font-size: 13px;
+    letter-spacing: 2px;
+    padding: 3px 10px;
+    border-radius: 3px;
+    margin-bottom: 8px;
+  }
+  .logo-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.1;
+  }
+  .logo-sub {
+    font-size: 11px;
+    color: var(--brown-200);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .sidebar-nav {
+    padding: 20px 12px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .nav-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--brown-300);
+    padding: 12px 8px 6px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: rgba(255,255,255,0.7);
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.18s;
+    border: none;
+    background: none;
+    text-align: left;
+    width: 100%;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.09); color: #fff; }
+  .nav-item.active { background: var(--brown-400); color: #fff; box-shadow: 0 2px 12px rgba(192,128,64,0.35); }
+  .nav-icon { font-size: 18px; width: 22px; text-align: center; }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255,255,255,0.09);
+    font-size: 12px;
+    color: var(--brown-200);
+    text-align: center;
+  }
+
+  /* MAIN */
+  .main {
+    margin-left: 240px;
+    flex: 1;
+    padding: 0;
+  }
+
+  .topbar {
+    background: #fff;
+    border-bottom: 1px solid var(--brown-100);
+    padding: 16px 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: 0 2px 12px rgba(90,40,10,0.06);
+  }
+  .topbar-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--brown-800);
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .status-pill {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .status-live { background: #edfbf0; color: #1a7a3a; }
+  .status-idle { background: var(--brown-100); color: var(--brown-600); }
+  .avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--brown-400);
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* PAGE CONTENT */
+  .page {
+    padding: 36px;
+    animation: fadeIn 0.25s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: none; } }
+
+  .page-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--brown-800);
+    margin-bottom: 6px;
+  }
+  .page-sub {
+    color: var(--brown-500);
+    font-size: 14px;
+    margin-bottom: 30px;
+  }
+
+  /* CARDS */
+  .card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px 28px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--brown-100);
+  }
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--brown-700);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .step-badge {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--brown-400);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-badge.done { background: #27ae60; }
+
+  /* GRID LAYOUTS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .grid-steps { display: grid; grid-template-columns: 1fr; gap: 18px; }
+
+  /* UPLOAD ZONES */
+  .upload-zone {
+    border: 2px dashed var(--brown-200);
+    border-radius: 12px;
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--brown-50);
+    position: relative;
+  }
+  .upload-zone:hover { border-color: var(--brown-400); background: var(--brown-100); }
+  .upload-zone.has-file { border-color: #27ae60; border-style: solid; background: #f0fdf4; }
+  .upload-zone.dragging { border-color: var(--brown-500); background: var(--brown-100); transform: scale(1.01); }
+  .upload-icon { font-size: 36px; margin-bottom: 10px; }
+  .upload-text { font-size: 14px; color: var(--brown-600); font-weight: 500; }
+  .upload-hint { font-size: 12px; color: var(--brown-400); margin-top: 4px; }
+  .file-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #27ae60;
+    margin-top: 8px;
+    word-break: break-all;
+  }
+  .input-hidden { display: none; }
+
+  /* PREVIEW PHONE (TikTok aspect ratio 9:16) */
+  .phone-preview-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+  }
+  .phone-preview {
+    width: 160px;
+    aspect-ratio: 9/16;
+    background: #111;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 3px solid var(--brown-300);
+    position: relative;
+    box-shadow: var(--shadow-lg);
+  }
+  .phone-preview video { width: 100%; height: 100%; object-fit: cover; }
+  .phone-preview .caption-overlay {
+    position: absolute;
+    bottom: 28px;
+    left: 0; right: 0;
+    text-align: center;
+    padding: 4px 8px;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  }
+  .phone-preview .thumbnail-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 60%;
+    object-fit: cover;
+    width: 100%;
+  }
+  .phone-preview .tiktok-ui {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 6px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    color: #fff;
+    font-size: 8px;
+  }
+  .preview-placeholder {
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.4);
+    font-size: 11px;
+    gap: 8px;
+  }
+
+  /* BUTTONS */
+  .btn {
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.18s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary {
+    background: var(--brown-500);
+    color: #fff;
+    box-shadow: 0 2px 12px rgba(154,95,40,0.30);
+  }
+  .btn-primary:hover { background: var(--brown-600); transform: translateY(-1px); box-shadow: 0 4px 18px rgba(154,95,40,0.40); }
+  .btn-primary:disabled { background: var(--brown-200); color: var(--brown-400); cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-outline {
+    background: transparent;
+    color: var(--brown-600);
+    border: 1.5px solid var(--brown-300);
+  }
+  .btn-outline:hover { background: var(--brown-50); border-color: var(--brown-500); }
+  .btn-green {
+    background: #27ae60;
+    color: #fff;
+    box-shadow: 0 2px 12px rgba(39,174,96,0.25);
+  }
+  .btn-green:hover { background: #219150; }
+  .btn-sm { padding: 7px 14px; font-size: 12px; }
+  .btn-lg { padding: 14px 32px; font-size: 16px; }
+
+  /* TEXT INPUT */
+  .input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--brown-200);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    background: #fff;
+    color: var(--brown-800);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .input:focus { border-color: var(--brown-400); }
+  textarea.input { resize: vertical; min-height: 80px; line-height: 1.5; }
+  .input-label { font-size: 12px; font-weight: 600; color: var(--brown-600); margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  /* CAPTION AI SECTION */
+  .caption-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--brown-100);
+    border: 1px solid var(--brown-200);
+    color: var(--brown-700);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .caption-tag:hover { background: var(--brown-200); }
+  .caption-tag.selected { background: var(--brown-500); color: #fff; border-color: var(--brown-500); }
+  .captions-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+  /* PROGRESS */
+  .progress-bar-bg {
+    width: 100%;
+    height: 8px;
+    background: var(--brown-100);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--brown-400), var(--brown-300));
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+  .progress-label { font-size: 12px; color: var(--brown-500); margin-top: 4px; }
+
+  /* PROCESSING STEPS */
+  .process-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--brown-50);
+    border: 1px solid var(--brown-100);
+    font-size: 13px;
+  }
+  .process-step.active { background: #fffbf5; border-color: var(--brown-300); }
+  .process-step.done { background: #f0fdf4; border-color: #a8e6c0; }
+  .step-icon { font-size: 18px; }
+  .step-text { flex: 1; font-weight: 500; color: var(--brown-700); }
+  .step-status { font-size: 11px; color: var(--brown-400); }
+  .step-status.active-s { color: var(--brown-500); font-weight: 600; }
+  .step-status.done-s { color: #27ae60; font-weight: 600; }
+
+  /* DASHBOARD */
+  .stat-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px 22px;
+    border: 1px solid var(--brown-100);
+    box-shadow: var(--shadow);
+  }
+  .stat-label { font-size: 11px; color: var(--brown-400); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; }
+  .stat-value { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; color: var(--brown-800); margin: 4px 0 2px; }
+  .stat-change { font-size: 12px; font-weight: 600; }
+  .stat-up { color: #27ae60; }
+  .stat-down { color: #e74c3c; }
+
+  /* CHART */
+  .chart-area {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px;
+    border: 1px solid var(--brown-100);
+    box-shadow: var(--shadow);
+  }
+  .chart-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--brown-700);
+    margin-bottom: 20px;
+  }
+  .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 160px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .bar {
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    transition: all 0.3s;
+    cursor: pointer;
+    min-height: 4px;
+  }
+  .bar:hover { filter: brightness(1.12); }
+  .bar-label { font-size: 9px; color: var(--brown-400); text-align: center; }
+  .bar-val { font-size: 10px; font-weight: 600; color: var(--brown-600); }
+
+  /* ACCOUNT TABLE */
+  .account-table { width: 100%; border-collapse: collapse; }
+  .account-table th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--brown-400);
+    border-bottom: 1px solid var(--brown-100);
+    font-weight: 600;
+  }
+  .account-table td {
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--brown-700);
+    border-bottom: 1px solid var(--brown-50);
+  }
+  .account-table tr:last-child td { border-bottom: none; }
+  .account-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+  .income-val { font-weight: 700; color: var(--brown-800); }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    background: var(--brown-700);
+    color: #fff;
+    padding: 14px 22px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    z-index: 999;
+    animation: slideUp 0.25s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  @keyframes slideUp { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: none; } }
+
+  /* IMAGE GRID */
+  .img-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+  .img-slot {
+    aspect-ratio: 9/16;
+    border-radius: 8px;
+    border: 2px dashed var(--brown-200);
+    background: var(--brown-50);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+    transition: all 0.18s;
+    font-size: 11px;
+    color: var(--brown-400);
+    text-align: center;
+    gap: 4px;
+  }
+  .img-slot:hover { border-color: var(--brown-400); background: var(--brown-100); }
+  .img-slot img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+  .img-slot .slot-label { font-size: 11px; color: var(--brown-500); font-weight: 600; position: relative; z-index: 1; }
+
+  /* GDRIVE INPUT */
+  .gdrive-row { display: flex; gap: 10px; align-items: flex-end; }
+  .gdrive-icon { font-size: 20px; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--brown-50); }
+  ::-webkit-scrollbar-thumb { background: var(--brown-200); border-radius: 3px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .sidebar { width: 200px; }
+    .main { margin-left: 200px; }
+    .grid-4 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+  }
+`;
+
+// ---- Mock data ----
+const ACCOUNTS = [
+  { id: 1, name: "@jamesfinds_ph", color: "#c08040", income: [820, 950, 1100, 870, 1340, 1580, 1200], total: 7860 },
+  { id: 2, name: "@dlspromos", color: "#7a4820", income: [430, 510, 620, 490, 780, 900, 750], total: 4480 },
+  { id: 3, name: "@jamestiktokshop", color: "#d4a873", income: [210, 340, 290, 410, 520, 480, 610], total: 2860 },
+];
+
+const MONTHS = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr"];
+
+const SAMPLE_CAPTIONS = [
+  "This product changed my skin in 7 days 😍",
+  "POV: You finally found the deal of the year 🔥",
+  "No one is talking about this enough 👀",
+  "Wait for the results… 😲",
+  "I tested it so you don't have to ✨",
+  "Under ₱500 and it works BETTER than luxury brands 💅",
+  "TikTok shop haul that actually slaps 🛒",
+  "My followers kept asking so here it is 📦",
+];
+
+// ---- COMPONENTS ----
+
+function UploadZone({ label, hint, icon, accept, onFile, fileName, children }) {
+  const ref = useRef();
+  const [drag, setDrag] = useState(false);
+  return (
+    <div
+      className={`upload-zone${fileName ? " has-file" : ""}${drag ? " dragging" : ""}`}
+      onClick={() => ref.current.click()}
+      onDragOver={e => { e.preventDefault(); setDrag(true); }}
+      onDragLeave={() => setDrag(false)}
+      onDrop={e => {
+        e.preventDefault(); setDrag(false);
+        const f = e.dataTransfer.files[0];
+        if (f) onFile(f);
+      }}
+    >
+      <input ref={ref} type="file" accept={accept} className="input-hidden"
+        onChange={e => e.target.files[0] && onFile(e.target.files[0])} />
+      <div className="upload-icon">{icon}</div>
+      <div className="upload-text">{label}</div>
+      <div className="upload-hint">{hint}</div>
+      {fileName && <div className="file-name">✓ {fileName}</div>}
+      {children}
+    </div>
+  );
+}
+
+function ProgressBar({ value, label }) {
+  return (
+    <div>
+      <div className="progress-bar-bg">
+        <div className="progress-bar-fill" style={{ width: `${value}%` }} />
+      </div>
+      <div className="progress-label">{label}</div>
+    </div>
+  );
+}
+
+function Toast({ msg, onClose }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 3200);
+    return () => clearTimeout(t);
+  }, []);
+  return <div className="toast">✅ {msg}</div>;
+}
+
+// ---- PAGES ----
+
+function VideoCreatorPage() {
+  const [video, setVideo] = useState(null);
+  const [videoURL, setVideoURL] = useState(null);
+  const [thumbnail, setThumbnail] = useState(null);
+  const [thumbnailURL, setThumbnailURL] = useState(null);
+  const [productImages, setProductImages] = useState([null, null, null]);
+  const [productURLs, setProductURLs] = useState([null, null, null]);
+  const [caption, setCaption] = useState("");
+  const [selectedCaption, setSelectedCaption] = useState("");
+  const [gdriveLink, setGdriveLink] = useState("");
+  const [processing, setProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [steps, setSteps] = useState([
+    { label: "Loading base video", status: "idle" },
+    { label: "Generating AI caption", status: "idle" },
+    { label: "Overlaying product images (3 × 1.5s)", status: "idle" },
+    { label: "Applying thumbnail", status: "idle" },
+    { label: "Exporting TikTok format (9:16)", status: "idle" },
+    { label: "Uploading to Google Drive", status: "idle" },
+  ]);
+  const [done, setDone] = useState(false);
+  const [toast, setToast] = useState(null);
+  const imgRefs = [useRef(), useRef(), useRef()];
+
+  const handleVideoUpload = f => {
+    setVideo(f);
+    setVideoURL(URL.createObjectURL(f));
+  };
+  const handleThumbnail = f => {
+    setThumbnail(f);
+    setThumbnailURL(URL.createObjectURL(f));
+  };
+  const handleProductImg = (f, i) => {
+    const urls = [...productURLs];
+    urls[i] = URL.createObjectURL(f);
+    setProductURLs(urls);
+    const imgs = [...productImages];
+    imgs[i] = f;
+    setProductImages(imgs);
+  };
+
+  const useCaption = (c) => {
+    setSelectedCaption(c);
+    setCaption(c);
+  };
+
+  const canProcess = video && caption && thumbnail;
+
+  const runProcess = async () => {
+    setProcessing(true);
+    setDone(false);
+    setProgress(0);
+    const newSteps = steps.map(s => ({ ...s, status: "idle" }));
+
+    for (let i = 0; i < newSteps.length; i++) {
+      newSteps[i].status = "active";
+      setSteps([...newSteps]);
+      setProgress(Math.round(((i) / newSteps.length) * 100));
+      await new Promise(r => setTimeout(r, 900 + Math.random() * 600));
+      newSteps[i].status = "done";
+      setSteps([...newSteps]);
+    }
+    setProgress(100);
+    setProcessing(false);
+    setDone(true);
+    setToast("Video processed & uploaded to Google Drive!");
+  };
+
+  const stepIcons = ["🎬", "✍️", "🖼️", "🖼️", "📱", "☁️"];
+
+  return (
+    <div className="page">
+      <div className="page-heading">Video Creator</div>
+      <div className="page-sub">Build your TikTok affiliate video — 5s base, AI caption, product images, thumbnail, then upload.</div>
+
+      <div className="grid-2" style={{ gap: 28 }}>
+        {/* LEFT: Steps */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+
+          {/* Step 1 */}
+          <div className="card">
+            <div className="card-title">
+              <span className={`step-badge${video ? " done" : ""}`}>{video ? "✓" : "1"}</span>
+              Upload 5-Second Base Video
+            </div>
+            <UploadZone
+              label="Drop your 5-second TikTok video"
+              hint="MP4, MOV — 9:16 aspect ratio preferred"
+              icon="🎬"
+              accept="video/*"
+              onFile={handleVideoUpload}
+              fileName={video?.name}
+            />
+          </div>
+
+          {/* Step 2 */}
+          <div className="card">
+            <div className="card-title">
+              <span className={`step-badge${caption ? " done" : ""}`}>{caption ? "✓" : "2"}</span>
+              AI Caption (Based on Your Style)
+            </div>
+            <div className="input-label">Paste your past captions for AI to learn your style</div>
+            <textarea className="input" placeholder="Paste 3–5 of your previous TikTok captions here…" style={{ marginBottom: 12 }} rows={3} />
+            <button className="btn btn-outline btn-sm" style={{ marginBottom: 12 }}
+              onClick={async () => {
+                const r = SAMPLE_CAPTIONS[Math.floor(Math.random() * SAMPLE_CAPTIONS.length)];
+                setCaption(r);
+                setSelectedCaption(r);
+                setToast("AI generated a caption in your style!");
+              }}>
+              ✨ Generate Caption with AI
+            </button>
+            <div className="input-label">Or pick from AI suggestions</div>
+            <div className="captions-wrap">
+              {SAMPLE_CAPTIONS.map((c, i) => (
+                <span key={i} className={`caption-tag${selectedCaption === c ? " selected" : ""}`}
+                  onClick={() => useCaption(c)}>{c}</span>
+              ))}
+            </div>
+            {caption && (
+              <div style={{ marginTop: 14 }}>
+                <div className="input-label">Selected Caption</div>
+                <input className="input" value={caption} onChange={e => setCaption(e.target.value)} />
+              </div>
+            )}
+          </div>
+
+          {/* Step 3 */}
+          <div className="card">
+            <div className="card-title">
+              <span className={`step-badge${productImages.some(Boolean) ? " done" : ""}`}>
+                {productImages.some(Boolean) ? "✓" : "3"}
+              </span>
+              3 Product Images (1.5s each)
+            </div>
+            <div style={{ fontSize: 12, color: "var(--brown-500)", marginBottom: 10 }}>
+              Each image shows for 1.5 seconds in the video sequence.
+            </div>
+            <div className="img-grid">
+              {[0, 1, 2].map(i => (
+                <div key={i}>
+                  <div className="img-slot" onClick={() => imgRefs[i].current.click()}>
+                    {productURLs[i]
+                      ? <img src={productURLs[i]} alt={`Product ${i + 1}`} />
+                      : <>
+                        <span style={{ fontSize: 22 }}>📦</span>
+                        <span className="slot-label">Image {i + 1}</span>
+                        <span style={{ fontSize: 10, color: "var(--brown-300)" }}>1.5s</span>
+                      </>
+                    }
+                    <input ref={imgRefs[i]} type="file" accept="image/*" className="input-hidden"
+                      onChange={e => e.target.files[0] && handleProductImg(e.target.files[0], i)} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Step 4 */}
+          <div className="card">
+            <div className="card-title">
+              <span className={`step-badge${thumbnail ? " done" : ""}`}>{thumbnail ? "✓" : "4"}</span>
+              Thumbnail
+            </div>
+            <UploadZone
+              label="Upload thumbnail image"
+              hint="JPG, PNG — will be used as TikTok cover"
+              icon="🖼️"
+              accept="image/*"
+              onFile={handleThumbnail}
+              fileName={thumbnail?.name}
+            />
+          </div>
+
+          {/* Step 5 */}
+          <div className="card">
+            <div className="card-title">
+              <span className={`step-badge${gdriveLink ? " done" : ""}`}>{gdriveLink ? "✓" : "5"}</span>
+              Google Drive Upload Link
+            </div>
+            <div className="input-label">Paste your Google Drive folder link</div>
+            <div className="gdrive-row">
+              <span className="gdrive-icon">🔗</span>
+              <input className="input" placeholder="https://drive.google.com/drive/folders/..." value={gdriveLink}
+                onChange={e => setGdriveLink(e.target.value)} />
+            </div>
+            <div style={{ fontSize: 12, color: "var(--brown-400)", marginTop: 8 }}>
+              Make sure the folder is shared with edit access.
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT: Preview + Process */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+
+          {/* Phone Preview */}
+          <div className="card">
+            <div className="card-title">📱 TikTok Preview (9:16)</div>
+            <div className="phone-preview-wrap">
+              <div className="phone-preview">
+                {videoURL
+                  ? <>
+                    <video src={videoURL} muted loop autoPlay playsInline style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }} />
+                    {thumbnailURL && !caption && <img src={thumbnailURL} className="thumbnail-overlay" alt="thumb" />}
+                    {caption && (
+                      <div className="caption-overlay">{caption}</div>
+                    )}
+                    <div className="tiktok-ui">
+                      <div style={{ fontSize: 7, opacity: 0.8 }}>@jamesfinds_ph</div>
+                      <div style={{ fontSize: 6, opacity: 0.6 }}>TikTok Shop Affiliate</div>
+                    </div>
+                  </>
+                  : <div className="preview-placeholder">
+                    <span style={{ fontSize: 28 }}>📱</span>
+                    <span>Upload video to preview</span>
+                  </div>
+                }
+              </div>
+            </div>
+
+            {/* Product image strip */}
+            {productURLs.some(Boolean) && (
+              <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 10 }}>
+                {productURLs.map((u, i) => (
+                  <div key={i} style={{
+                    width: 46, aspectRatio: "9/16", borderRadius: 6,
+                    background: u ? "none" : "var(--brown-100)",
+                    border: `1.5px solid ${u ? "var(--brown-300)" : "var(--brown-200)"}`,
+                    overflow: "hidden",
+                    display: "flex", alignItems: "center", justifyContent: "center"
+                  }}>
+                    {u ? <img src={u} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : <span style={{ fontSize: 14 }}>📦</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {thumbnailURL && (
+              <div style={{ marginTop: 12, textAlign: "center" }}>
+                <div style={{ fontSize: 11, color: "var(--brown-500)", marginBottom: 6 }}>Thumbnail</div>
+                <img src={thumbnailURL} style={{ width: 80, height: 45, objectFit: "cover", borderRadius: 6, border: "1.5px solid var(--brown-200)" }} />
+              </div>
+            )}
+          </div>
+
+          {/* Process */}
+          <div className="card">
+            <div className="card-title">⚙️ Processing Pipeline</div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+              {steps.map((s, i) => (
+                <div key={i} className={`process-step${s.status === "active" ? " active" : s.status === "done" ? " done" : ""}`}>
+                  <span className="step-icon">
+                    {s.status === "done" ? "✅" : s.status === "active" ? "⏳" : stepIcons[i]}
+                  </span>
+                  <span className="step-text">{s.label}</span>
+                  <span className={`step-status ${s.status === "active" ? "active-s" : s.status === "done" ? "done-s" : ""}`}>
+                    {s.status === "active" ? "Processing…" : s.status === "done" ? "Done" : "Waiting"}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {processing && <ProgressBar value={progress} label={`Processing… ${progress}%`} />}
+
+            {done && (
+              <div style={{ background: "#edfbf2", border: "1px solid #a8e6c0", borderRadius: 8, padding: "12px 16px", marginBottom: 14, fontSize: 13, color: "#1a7a3a", fontWeight: 600 }}>
+                ✅ Video created & uploaded to Google Drive!
+              </div>
+            )}
+
+            <button
+              className="btn btn-primary btn-lg"
+              style={{ width: "100%", justifyContent: "center", marginTop: 6 }}
+              disabled={!canProcess || processing}
+              onClick={runProcess}
+            >
+              {processing ? "⏳ Processing…" : done ? "🔄 Create Another" : "🚀 Create & Upload Video"}
+            </button>
+            {!canProcess && (
+              <div style={{ fontSize: 12, color: "var(--brown-400)", marginTop: 8, textAlign: "center" }}>
+                Upload video + pick a caption + add thumbnail to enable
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
+    </div>
+  );
+}
+
+function DashboardPage() {
+  const totalIncome = ACCOUNTS.reduce((s, a) => s + a.total, 0);
+  const maxBar = Math.max(...ACCOUNTS.flatMap(a => a.income));
+
+  const [activeAcc, setActiveAcc] = useState(null);
+
+  const displayed = activeAcc !== null
+    ? ACCOUNTS.filter(a => a.id === activeAcc)
+    : ACCOUNTS;
+
+  return (
+    <div className="page">
+      <div className="page-heading">Income Dashboard</div>
+      <div className="page-sub">Track affiliate income across all your TikTok Shop accounts.</div>
+
+      {/* Stat cards */}
+      <div className="grid-4" style={{ marginBottom: 24 }}>
+        <div className="stat-card">
+          <div className="stat-label">Total Income</div>
+          <div className="stat-value">₱{totalIncome.toLocaleString()}</div>
+          <div className="stat-change stat-up">↑ 18.4% this month</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">This Month</div>
+          <div className="stat-value">₱{(2560).toLocaleString()}</div>
+          <div className="stat-change stat-up">↑ 12% vs last</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Videos Published</div>
+          <div className="stat-value">87</div>
+          <div className="stat-change stat-up">↑ 9 this week</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Active Accounts</div>
+          <div className="stat-value">3</div>
+          <div className="stat-change" style={{ color: "var(--brown-400)" }}>All live</div>
+        </div>
+      </div>
+
+      <div className="grid-2" style={{ marginBottom: 24 }}>
+        {/* Bar Chart */}
+        <div className="chart-area">
+          <div className="chart-title">Monthly Income by Account</div>
+          <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+            {ACCOUNTS.map(a => (
+              <span key={a.id}
+                onClick={() => setActiveAcc(activeAcc === a.id ? null : a.id)}
+                className="caption-tag"
+                style={{ borderColor: a.color, color: activeAcc === a.id ? "#fff" : a.color, background: activeAcc === a.id ? a.color : "transparent" }}>
+                ● {a.name}
+              </span>
+            ))}
+          </div>
+          <div className="bar-chart">
+            {MONTHS.map((m, mi) => (
+              <div key={m} className="bar-col">
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 2, width: "100%" }}>
+                  {displayed.map(a => {
+                    const h = Math.round((a.income[mi] / maxBar) * 130);
+                    return (
+                      <div key={a.id} className="bar"
+                        style={{ height: h, background: a.color, opacity: 0.85 }}
+                        title={`${a.name}: ₱${a.income[mi]}`} />
+                    );
+                  })}
+                </div>
+                <div className="bar-label">{m}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Line sparklines */}
+        <div className="chart-area">
+          <div className="chart-title">Account Breakdown</div>
+          <table className="account-table">
+            <thead>
+              <tr>
+                <th>Account</th>
+                <th>Total Income</th>
+                <th>Last Month</th>
+                <th>Trend</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ACCOUNTS.map(a => {
+                const last = a.income[a.income.length - 1];
+                const prev = a.income[a.income.length - 2];
+                const up = last >= prev;
+                return (
+                  <tr key={a.id}>
+                    <td>
+                      <span className="account-dot" style={{ background: a.color }} />
+                      {a.name}
+                    </td>
+                    <td className="income-val">₱{a.total.toLocaleString()}</td>
+                    <td>₱{last.toLocaleString()}</td>
+                    <td className={up ? "stat-up" : "stat-down"}>{up ? "↑" : "↓"} {Math.abs(last - prev)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontSize: 12, color: "var(--brown-500)", fontWeight: 600, marginBottom: 12 }}>Revenue Distribution</div>
+            <div style={{ display: "flex", gap: 4, height: 14, borderRadius: 7, overflow: "hidden" }}>
+              {ACCOUNTS.map(a => {
+                const pct = Math.round((a.total / totalIncome) * 100);
+                return <div key={a.id} style={{ flex: pct, background: a.color }} title={`${a.name}: ${pct}%`} />;
+              })}
+            </div>
+            <div style={{ display: "flex", gap: 16, marginTop: 8 }}>
+              {ACCOUNTS.map(a => (
+                <div key={a.id} style={{ fontSize: 11, color: a.color, fontWeight: 600 }}>
+                  {a.name.split("_")[0]}: {Math.round((a.total / totalIncome) * 100)}%
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Linked accounts */}
+      <div className="card">
+        <div className="card-title">🔗 Linked TikTok Shop Accounts</div>
+        <div className="grid-3">
+          {ACCOUNTS.map(a => (
+            <div key={a.id} style={{
+              background: "var(--brown-50)", border: "1px solid var(--brown-100)",
+              borderRadius: 10, padding: "16px 18px"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: "50%", background: a.color, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+                  🛒
+                </div>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: "var(--brown-800)" }}>{a.name}</div>
+                  <div style={{ fontSize: 11, color: "var(--brown-400)" }}>TikTok Shop Affiliate</div>
+                </div>
+              </div>
+              <div style={{ fontSize: 22, fontFamily: "'Playfair Display', serif", fontWeight: 700, color: "var(--brown-800)" }}>
+                ₱{a.total.toLocaleString()}
+              </div>
+              <div style={{ fontSize: 11, color: "var(--brown-400)", marginBottom: 10 }}>All-time income</div>
+              <ProgressBar value={Math.round((a.total / totalIncome) * 100)} label={`${Math.round((a.total / totalIncome) * 100)}% of total`} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CaptionLibraryPage() {
+  const [saved, setSaved] = useState(SAMPLE_CAPTIONS.slice(0, 4));
+  const [newCap, setNewCap] = useState("");
+  const [toast, setToast] = useState(null);
+
+  return (
+    <div className="page">
+      <div className="page-heading">Caption Library</div>
+      <div className="page-sub">Manage your past captions so the AI can learn and match your style.</div>
+
+      <div className="grid-2">
+        <div className="card">
+          <div className="card-title">✍️ Add Caption</div>
+          <div className="input-label">New Caption</div>
+          <textarea className="input" placeholder="Type a caption you've used before…" value={newCap}
+            onChange={e => setNewCap(e.target.value)} rows={3} style={{ marginBottom: 12 }} />
+          <button className="btn btn-primary" disabled={!newCap.trim()}
+            onClick={() => { setSaved([...saved, newCap.trim()]); setNewCap(""); setToast("Caption saved!"); }}>
+            + Add to Library
+          </button>
+        </div>
+
+        <div className="card">
+          <div className="card-title">📚 Saved Captions ({saved.length})</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {saved.map((c, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--brown-50)", borderRadius: 8, padding: "10px 14px", border: "1px solid var(--brown-100)" }}>
+                <span style={{ flex: 1, fontSize: 13, color: "var(--brown-700)" }}>{c}</span>
+                <button className="btn btn-outline btn-sm"
+                  onClick={() => { setSaved(saved.filter((_, j) => j !== i)); }}>✕</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
+    </div>
+  );
+}
+
+function SettingsPage() {
+  const [accounts, setAccounts] = useState(ACCOUNTS.map(a => ({ ...a, linked: true })));
+  const [gdrive, setGdrive] = useState("https://drive.google.com/drive/folders/");
+  const [toast, setToast] = useState(null);
+
+  return (
+    <div className="page">
+      <div className="page-heading">Settings</div>
+      <div className="page-sub">Manage linked accounts and integrations.</div>
+
+      <div className="grid-2" style={{ gap: 24 }}>
+        <div className="card">
+          <div className="card-title">🛒 TikTok Shop Accounts</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {accounts.map((a, i) => (
+              <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 12, background: "var(--brown-50)", borderRadius: 8, padding: "12px 16px", border: "1px solid var(--brown-100)" }}>
+                <span className="account-dot" style={{ background: a.color, width: 12, height: 12 }} />
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: "var(--brown-800)" }}>{a.name}</span>
+                <span className={`status-pill ${a.linked ? "status-live" : "status-idle"}`}>{a.linked ? "Linked" : "Disconnected"}</span>
+                <button className="btn btn-outline btn-sm"
+                  onClick={() => {
+                    const updated = [...accounts];
+                    updated[i].linked = !updated[i].linked;
+                    setAccounts(updated);
+                  }}>
+                  {a.linked ? "Unlink" : "Link"}
+                </button>
+              </div>
+            ))}
+            <button className="btn btn-outline btn-sm" style={{ alignSelf: "flex-start" }}>+ Add Account</button>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-title">☁️ Google Drive Integration</div>
+          <div className="input-label">Default Upload Folder</div>
+          <input className="input" value={gdrive} onChange={e => setGdrive(e.target.value)} style={{ marginBottom: 12 }} />
+          <button className="btn btn-primary" onClick={() => setToast("Google Drive folder saved!")}>
+            Save Drive Settings
+          </button>
+
+          <div style={{ marginTop: 24 }}>
+            <div className="card-title" style={{ marginBottom: 12 }}>⚙️ Video Defaults</div>
+            <div className="input-label">Caption Style</div>
+            <select className="input" style={{ marginBottom: 10 }}>
+              <option>Hype / Excitement</option>
+              <option>Educational</option>
+              <option>POV / Storytelling</option>
+              <option>Before & After</option>
+            </select>
+            <div className="input-label">Default Export Format</div>
+            <select className="input">
+              <option>MP4 – TikTok 9:16 1080×1920</option>
+              <option>MP4 – Compressed 720p</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
+    </div>
+  );
+}
+
+// ---- MAIN APP ----
+export default function App() {
+  const [page, setPage] = useState("creator");
+
+  const navItems = [
+    { id: "dashboard", icon: "📊", label: "Dashboard" },
+    { id: "creator", icon: "🎬", label: "Video Creator" },
+    { id: "captions", icon: "✍️", label: "Caption Library" },
+    { id: "settings", icon: "⚙️", label: "Settings" },
+  ];
+
+  const pageTitles = {
+    dashboard: "Income Dashboard",
+    creator: "Video Creator",
+    captions: "Caption Library",
+    settings: "Settings",
+  };
+
+  return (
+    <>
+      <style>{styles}</style>
+      <div className="app-shell">
+        <div className="sidebar">
+          <div className="sidebar-logo">
+            <div className="logo-badge">DLS</div>
+            <div className="logo-title">James<br />Automation</div>
+            <div className="logo-sub">TikTok Shop Suite</div>
+          </div>
+          <nav className="sidebar-nav">
+            <div className="nav-label">Navigation</div>
+            {navItems.map(n => (
+              <button key={n.id} className={`nav-item${page === n.id ? " active" : ""}`}
+                onClick={() => setPage(n.id)}>
+                <span className="nav-icon">{n.icon}</span>
+                {n.label}
+              </button>
+            ))}
+          </nav>
+          <div className="sidebar-footer">
+            v1.0 · DLS James © 2025
+          </div>
+        </div>
+
+        <div className="main">
+          <div className="topbar">
+            <div className="topbar-title">{pageTitles[page]}</div>
+            <div className="topbar-right">
+              <span className="status-pill status-live">● Live</span>
+              <div className="avatar">J</div>
+            </div>
+          </div>
+
+          {page === "dashboard" && <DashboardPage />}
+          {page === "creator" && <VideoCreatorPage />}
+          {page === "captions" && <CaptionLibraryPage />}
+          {page === "settings" && <SettingsPage />}
+        </div>
+      </div>
+    </>
+  );
+}
